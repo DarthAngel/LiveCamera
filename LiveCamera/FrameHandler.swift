@@ -5,6 +5,7 @@
 //  Created by Angel Docampo on 8/10/25.
 //
 
+import Foundation
 import AVFoundation
 import CoreImage
 import Combine
@@ -13,16 +14,15 @@ class FrameHandler: NSObject, ObservableObject {
     @Published var frame: CGImage?
     private var permissionGranted = true
     private let captureSession = AVCaptureSession()
-    private let sessionQueue = DispatchQueue(label: "sessionQueue")
     private let context = CIContext()
 
     
     override init() {
         super.init()
         self.checkPermission()
-        sessionQueue.async { [unowned self] in
-            self.setupCaptureSession()
-            self.captureSession.startRunning()
+        Task {
+            await self.setupCaptureSession()
+            await self.startCaptureSession()
         }
     }
     
@@ -47,7 +47,7 @@ class FrameHandler: NSObject, ObservableObject {
         }
     }
     
-    func setupCaptureSession() {
+    func setupCaptureSession() async {
         let videoOutput = AVCaptureVideoDataOutput()
         
         guard permissionGranted else { return }
@@ -60,6 +60,10 @@ class FrameHandler: NSObject, ObservableObject {
         captureSession.addOutput(videoOutput)
         
         videoOutput.connection(with: .video)?.videoOrientation = .portrait
+    }
+    
+    func startCaptureSession() async {
+        captureSession.startRunning()
     }
 }
 
